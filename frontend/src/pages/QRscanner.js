@@ -1,62 +1,42 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import QrScanner from 'qr-scanner';
 import Webcam from 'react-webcam';
+import { markAttendance } from '../services/api';
 
-const QRScanner = () => {
+function QRScanner() {
   const videoRef = useRef(null);
   const webcamRef = useRef(null);
-  const [capturedImage, setCapturedImage] = useState(null);
+  const [img, setImg] = useState(null);
 
   useEffect(() => {
-    const video = videoRef.current;
-    const scanner = new QrScanner(video, async result => {
+    const scanner = new QrScanner(videoRef.current, async result => {
       scanner.stop();
 
-      // Get location
-      navigator.geolocation.getCurrentPosition(async (pos) => {
-        // Capture selfie
-        const imageSrc = webcamRef.current.getScreenshot();
-        setCapturedImage(imageSrc);
+      navigator.geolocation.getCurrentPosition(async pos => {
+        const selfie = webcamRef.current.getScreenshot();
+        setImg(selfie);
 
-        const payload = {
+        await markAttendance({
           qr_code_data: result,
-          selfie: imageSrc,
-          location: {
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-          },
-        };
-
-        const response = await fetch('/api/mark-attendance', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          location: { latitude: pos.coords.latitude, longitude: pos.coords.longitude },
+          selfie
         });
-
-        const data = await response.json();
-        alert(data.message);
+        alert('Attendance marked!');
       });
     });
-
     scanner.start();
+
     return () => scanner.stop();
   }, []);
 
   return (
     <div>
-      <h2>Scan QR and Capture Selfie</h2>
+      <h2>Scan & Capture</h2>
       <video ref={videoRef} width="300" height="300" />
-      <Webcam
-        audio={false}
-        ref={webcamRef}
-        screenshotFormat="image/jpeg"
-        width={300}
-        height={200}
-        videoConstraints={{ facingMode: 'user' }}
-      />
-      {capturedImage && <img src={capturedImage} alt="Captured Selfie" width={100} />}
+      <Webcam audio={false} ref={webcamRef} screenshotFormat="image/jpeg" width={300} height={200} />
+      {img && <img src={img} width="100" alt="Selfie" />}
     </div>
   );
-};
+}
 
 export default QRScanner;
