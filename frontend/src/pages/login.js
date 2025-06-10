@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { login } from '../services/api';
+import { setToken } from '../utils/auth';
 
-const Login = () => {
+function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('/api/login', { email, password });
-      localStorage.setItem('token', res.data.token);
-      window.location.href = res.data.role === 'admin' ? '/admin/dashboard' : '/student/dashboard';
-    } catch (err) {
+      const { data } = await login({ email, password });
+      setToken(data.token);
+      window.location = data.role === 'admin' ? '/admin/dashboard' : '/student/dashboard';
+    } catch {
       alert('Login failed');
     }
   };
@@ -19,11 +20,12 @@ const Login = () => {
   return (
     <form onSubmit={handleSubmit}>
       <h2>Login</h2>
-      <input type="email" placeholder="Email" onChange={(e) => setEmail(e.target.value)} required />
-      <input type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)} required />
+      <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" required/>
+      <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" required/>
       <button type="submit">Login</button>
     </form>
   );
-};
+}
 
 export default Login;
+
