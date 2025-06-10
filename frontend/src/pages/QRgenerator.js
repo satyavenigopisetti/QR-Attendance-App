@@ -1,28 +1,25 @@
 import React, { useState } from 'react';
 import QRCode from 'qrcode.react';
-import axios from 'axios';
+import { generateQR } from '../services/api';
 
-const QRGenerator = () => {
+function QRGenerator() {
   const [sessionId, setSessionId] = useState('');
-  const [qrData, setQrData] = useState('');
+  const [qr, setQr] = useState(null);
 
-  const generateQR = async () => {
-    try {
-      const res = await axios.post('/api/generate-qr', { session_id: sessionId });
-      setQrData(res.data.qr_code_data);
-    } catch (error) {
-      alert('Failed to generate QR code');
-    }
+  const handleGenerate = async () => {
+    const { data } = await generateQR({ session_id: sessionId });
+    setQr(data.qr_image);
   };
 
   return (
     <div>
-      <h2>Generate Dynamic QR</h2>
-      <input type="text" placeholder="Enter Session ID" value={sessionId} onChange={(e) => setSessionId(e.target.value)} />
-      <button onClick={generateQR}>Generate</button>
-      {qrData && <QRCode value={qrData} />}
+      <h2>Generate QR</h2>
+      <input placeholder="Session ID" value={sessionId} onChange={e => setSessionId(e.target.value)} />
+      <button onClick={handleGenerate}>Generate</button>
+      {qr && <img src={`data:image/png;base64,${qr}`} alt="QR Code"/>}
     </div>
   );
-};
+}
 
 export default QRGenerator;
+
